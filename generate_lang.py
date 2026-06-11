@@ -35,32 +35,45 @@ sorted_langs = sorted(lang_bytes.items(), key=lambda x: x[1], reverse=True)
 labels = [x[0] for x in sorted_langs]
 values = [x[1] for x in sorted_langs]
 
-total = sum(values)
-percentages = [v / total * 100 for v in values]
+# ======================
+# GitHub colors
+# ======================
+github_colors = {
+    "Java": "#b07219",
+    "Python": "#3572A5",
+    "JavaScript": "#f1e05a",
+    "TypeScript": "#3178c6",
+    "HTML": "#e34c26",
+    "CSS": "#563d7c",
+    "Shell": "#89e051",
+    "Dockerfile": "#384d54",
+    "Kotlin": "#A97BFF",
+    "Go": "#00ADD8",
+    "C": "#555555",
+    "C++": "#f34b7d",
+}
 
-# =========================
-# 🔥 关键：不用y轴标签，改成“干净图 + 右侧文字”
-# =========================
-plt.figure(figsize=(10, max(4, len(labels) * 0.25)))
+colors = [
+    github_colors.get(lang, "#9e9e9e")
+    for lang in labels
+]
 
-y_pos = range(len(labels))
+# ======================
+# 🥧 Pie Chart
+# ======================
+plt.figure(figsize=(8, 8))
 
-plt.barh(y_pos, percentages)
+plt.pie(
+    values,
+    labels=labels,
+    colors=colors,
+    autopct="%1.1f%%",
+    startangle=140,
+    pctdistance=0.8,
+    labeldistance=1.05,
+    textprops={"fontsize": 9}
+)
 
-plt.yticks([])  # ❌ 关闭y轴文字（关键防重叠）
-
-# 手动写文字（不会重叠）
-for i, (lang, pct) in enumerate(zip(labels, percentages)):
-    plt.text(
-        pct + 0.5,   # 放在条形右侧
-        i,
-        f"{lang} {pct:.1f}%",
-        va='center',
-        fontsize=9
-    )
-
-plt.xlabel("Percentage (%)")
-plt.title("Language Usage (Including Private Repos)")
-
+plt.title("Language Usage (GitHub Style)")
 plt.tight_layout()
 plt.savefig("language.svg", bbox_inches="tight", dpi=150)
