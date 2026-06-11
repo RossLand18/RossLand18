@@ -4,7 +4,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 TOKEN = os.getenv("TOKEN")
-USERNAME = os.getenv("USERNAME")
 
 headers = {
     "Authorization": f"Bearer {TOKEN}",
@@ -26,25 +25,42 @@ while True:
 lang_bytes = defaultdict(int)
 
 for repo in repos:
-    langs_url = repo["languages_url"]
-    r = requests.get(langs_url, headers=headers)
+    r = requests.get(repo["languages_url"], headers=headers)
     langs = r.json()
+    for k, v in langs.items():
+        lang_bytes[k] += v
 
-    for lang, size in langs.items():
-        lang_bytes[lang] += size
-
-# 排序
 sorted_langs = sorted(lang_bytes.items(), key=lambda x: x[1], reverse=True)
 
-labels = [x[0] for x in sorted_langs[:10]]  # 🔥 只取前10，避免拥挤
-values = [x[1] for x in sorted_langs[:10]]
+labels = [x[0] for x in sorted_langs]
+values = [x[1] for x in sorted_langs]
 
-# 画水平条形图（不会重叠）
-plt.figure(figsize=(8, 5))
-plt.barh(labels[::-1], values[::-1])  # 反转让最大在上面
+total = sum(values)
+percentages = [v / total * 100 for v in values]
 
-plt.title("Top Languages (Including Private Repos)")
-plt.xlabel("Bytes of Code")
+# =========================
+# 🔥 关键：不用y轴标签，改成“干净图 + 右侧文字”
+# =========================
+plt.figure(figsize=(10, max(4, len(labels) * 0.25)))
+
+y_pos = range(len(labels))
+
+plt.barh(y_pos, percentages)
+
+plt.yticks([])  # ❌ 关闭y轴文字（关键防重叠）
+
+# 手动写文字（不会重叠）
+for i, (lang, pct) in enumerate(zip(labels, percentages)):
+    plt.text(
+        pct + 0.5,   # 放在条形右侧
+        i,
+        f"{lang} {pct:.1f}%",
+        va='center',
+        fontsize=9
+    )
+
+plt.xlabel("Percentage (%)")
+plt.title("Language Usage (Including Private Repos)")
 
 plt.tight_layout()
-plt.savefig("language.svg", bbox_inches="tight")
+plt.savefig("language.svg", bbox_inches="tight", dpi=150)
