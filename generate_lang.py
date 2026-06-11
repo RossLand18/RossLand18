@@ -41,9 +41,6 @@ sorted_langs = sorted(lang_bytes.items(), key=lambda x: x[1], reverse=True)
 labels = [x[0] for x in sorted_langs]
 values = [x[1] for x in sorted_langs]
 
-total = sum(values)
-percentages = [v / total * 100 for v in values]
-
 # =========================
 # 3. GitHub 官方颜色
 # =========================
@@ -65,7 +62,24 @@ github_colors = {
 colors = [github_colors.get(lang, "#9e9e9e") for lang in labels]
 
 # =========================
-# 4. 画图（左饼图 + 右列表）
+# 4. 分组（核心：上下分层）
+# =========================
+total = sum(values)
+percentages = [v / total * 100 for v in values]
+
+# 按占比排序后再分上下
+mid = len(labels) // 2
+
+top_labels = labels[:mid]
+top_values = values[:mid]
+top_colors = colors[:mid]
+
+bottom_labels = labels[mid:]
+bottom_values = values[mid:]
+bottom_colors = colors[mid:]
+
+# =========================
+# 5. 画图布局
 # =========================
 fig, (ax1, ax2) = plt.subplots(
     1, 2,
@@ -74,28 +88,25 @@ fig, (ax1, ax2) = plt.subplots(
 )
 
 # =========================
-# 🥧 左：饼图
+# 🥧 饼图（无数字！）
 # =========================
-wedges, texts, autotexts = ax1.pie(
+ax1.pie(
     values,
     colors=colors,
-    startangle=140,
-    autopct="%1.1f%%",
-    pctdistance=0.75
+    startangle=140
 )
 
 ax1.set_title("Language Usage")
 ax1.axis("equal")
 
 # =========================
-# 📊 右：描述列表（关键）
+# 📊 右侧说明（上下分区）
 # =========================
 ax2.axis("off")
 
-y = 0.95
-line_height = 0.07
-
-for lang, pct, color in zip(labels, percentages, colors):
+# 上半部分（占比高）
+y = 0.9
+for lang, color in zip(top_labels, top_colors):
     ax2.add_patch(
         plt.Rectangle(
             (0.05, y - 0.03),
@@ -106,20 +117,44 @@ for lang, pct, color in zip(labels, percentages, colors):
             clip_on=False
         )
     )
-
     ax2.text(
         0.1,
         y,
-        f"{lang}  {pct:.2f}%",
+        lang,
         transform=ax2.transAxes,
         fontsize=10,
         va="center"
     )
+    y -= 0.08
 
-    y -= line_height
+# 中间分割
+ax2.text(0.05, y, "──────", transform=ax2.transAxes, fontsize=10)
+y -= 0.08
+
+# 下半部分（占比低）
+for lang, color in zip(bottom_labels, bottom_colors):
+    ax2.add_patch(
+        plt.Rectangle(
+            (0.05, y - 0.03),
+            0.03,
+            0.03,
+            color=color,
+            transform=ax2.transAxes,
+            clip_on=False
+        )
+    )
+    ax2.text(
+        0.1,
+        y,
+        lang,
+        transform=ax2.transAxes,
+        fontsize=10,
+        va="center"
+    )
+    y -= 0.07
 
 # =========================
-# 5. 保存 SVG（GitHub README用）
+# 6. 保存 SVG
 # =========================
 plt.tight_layout()
 plt.savefig("language.svg", format="svg", bbox_inches="tight")
