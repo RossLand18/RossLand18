@@ -10,27 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install requests matplotlib
+      - run: pip install requests matplotlib
 
-      - name: Generate language chart
+      - run: python generate_lang.py
         env:
           TOKEN: ${{ secrets.GH_TOKEN }}
           USERNAME: ${{ github.repository_owner }}
-        run: python generate_lang.py
 
-      - name: Commit result
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add language.svg
-          git commit -m "update language stats" || exit 0
-          git push
+      - name: Commit & Push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: update language stats
+          file_pattern: language.svg
