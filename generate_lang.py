@@ -37,24 +37,26 @@ for repo in repos:
         lang_bytes[k] += v
 
 # =========================
-# ❗关键：过滤 HTML / CSS
+# ❗过滤 HTML / CSS
 # =========================
 exclude_langs = {"HTML", "CSS"}
 
-filtered_langs = [
+filtered = [
     (lang, size)
     for lang, size in lang_bytes.items()
     if lang not in exclude_langs
 ]
 
-# 排序
-sorted_langs = sorted(filtered_langs, key=lambda x: x[1], reverse=True)
+sorted_langs = sorted(filtered, key=lambda x: x[1], reverse=True)
 
 labels = [x[0] for x in sorted_langs]
 values = [x[1] for x in sorted_langs]
 
+total = sum(values)
+percentages = [v / total * 100 for v in values]
+
 # =========================
-# 3. GitHub 颜色
+# GitHub颜色
 # =========================
 github_colors = {
     "Java": "#b07219",
@@ -72,20 +74,15 @@ github_colors = {
 colors = [github_colors.get(lang, "#9e9e9e") for lang in labels]
 
 # =========================
-# 4. 上下分层（按占比）
+# 分层（上：主要，下：次要）
 # =========================
-total = sum(values)
-
 mid = len(labels) // 2
 
-top_labels = labels[:mid]
-bottom_labels = labels[mid:]
-
-top_colors = colors[:mid]
-bottom_colors = colors[mid:]
+top = list(zip(labels[:mid], percentages[:mid], colors[:mid]))
+bottom = list(zip(labels[mid:], percentages[mid:], colors[mid:]))
 
 # =========================
-# 5. 画布
+# 图形
 # =========================
 fig, (ax1, ax2) = plt.subplots(
     1, 2,
@@ -94,7 +91,7 @@ fig, (ax1, ax2) = plt.subplots(
 )
 
 # =========================
-# 🥧 饼图（纯颜色，无文字）
+# 🥧 饼图（纯颜色）
 # =========================
 ax1.pie(
     values,
@@ -106,38 +103,61 @@ ax1.set_title("Language Usage (HTML/CSS excluded)")
 ax1.axis("equal")
 
 # =========================
-# 📊 右侧 legend（分上下）
+# 📊 右侧（对齐版 legend）
 # =========================
 ax2.axis("off")
 
-y = 0.9
-
-# 上半（主要语言）
-for lang, color in zip(top_labels, top_colors):
+def draw_item(y, lang, pct, color):
+    # 色块
     ax2.add_patch(
-        plt.Rectangle((0.05, y - 0.03), 0.03, 0.03,
-                      color=color, transform=ax2.transAxes)
+        plt.Rectangle(
+            (0.05, y - 0.015),
+            0.025,
+            0.025,
+            color=color,
+            transform=ax2.transAxes,
+            clip_on=False
+        )
     )
-    ax2.text(0.1, y, lang, transform=ax2.transAxes,
-             fontsize=10, va="center")
+
+    # 语言名（左对齐）
+    ax2.text(
+        0.1,
+        y,
+        lang,
+        transform=ax2.transAxes,
+        fontsize=10,
+        va="center"
+    )
+
+    # 百分比（右对齐）
+    ax2.text(
+        0.9,
+        y,
+        f"{pct:.1f}%",
+        transform=ax2.transAxes,
+        fontsize=10,
+        va="center",
+        ha="right"
+    )
+
+# =========================
+# 上半部分（主语言）
+# =========================
+y = 0.9
+for lang, pct, color in top:
+    draw_item(y, lang, pct, color)
     y -= 0.08
 
-# 分割线
-ax2.text(0.05, y, "──────────", transform=ax2.transAxes)
-y -= 0.08
-
-# 下半（次要语言）
-for lang, color in zip(bottom_labels, bottom_colors):
-    ax2.add_patch(
-        plt.Rectangle((0.05, y - 0.03), 0.03, 0.03,
-                      color=color, transform=ax2.transAxes)
-    )
-    ax2.text(0.1, y, lang, transform=ax2.transAxes,
-             fontsize=10, va="center")
+# =========================
+# 下半部分（次语言）
+# =========================
+for lang, pct, color in bottom:
+    draw_item(y, lang, pct, color)
     y -= 0.07
 
 # =========================
-# 6. 输出 SVG
+# 保存
 # =========================
 plt.tight_layout()
 plt.savefig("language.svg", format="svg", bbox_inches="tight")
