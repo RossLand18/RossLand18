@@ -20,8 +20,10 @@ while True:
     url = f"https://api.github.com/user/repos?per_page=100&page={page}&affiliation=owner"
     r = requests.get(url, headers=headers)
     data = r.json()
+
     if not data:
         break
+
     repos.extend(data)
     page += 1
 
@@ -33,11 +35,12 @@ lang_bytes = defaultdict(int)
 for repo in repos:
     r = requests.get(repo["languages_url"], headers=headers)
     langs = r.json()
+
     for k, v in langs.items():
         lang_bytes[k] += v
 
 # =========================
-# ❗过滤 HTML / CSS
+# 过滤 HTML / CSS
 # =========================
 exclude_langs = {"HTML", "CSS"}
 
@@ -47,7 +50,11 @@ filtered = [
     if lang not in exclude_langs
 ]
 
-sorted_langs = sorted(filtered, key=lambda x: x[1], reverse=True)
+sorted_langs = sorted(
+    filtered,
+    key=lambda x: x[1],
+    reverse=True
+)
 
 labels = [x[0] for x in sorted_langs]
 values = [x[1] for x in sorted_langs]
@@ -55,8 +62,11 @@ values = [x[1] for x in sorted_langs]
 total = sum(values)
 percentages = [v / total * 100 for v in values]
 
+# 用于对齐
+max_lang_len = max(len(lang) for lang in labels)
+
 # =========================
-# GitHub颜色
+# GitHub 语言颜色
 # =========================
 github_colors = {
     "Java": "#b07219",
@@ -71,27 +81,42 @@ github_colors = {
     "C++": "#f34b7d",
 }
 
-colors = [github_colors.get(lang, "#9e9e9e") for lang in labels]
+colors = [
+    github_colors.get(lang, "#9e9e9e")
+    for lang in labels
+]
 
 # =========================
-# 分层（上：主要，下：次要）
+# 分层显示
 # =========================
 mid = len(labels) // 2
 
-top = list(zip(labels[:mid], percentages[:mid], colors[:mid]))
-bottom = list(zip(labels[mid:], percentages[mid:], colors[mid:]))
+top = list(zip(
+    labels[:mid],
+    percentages[:mid],
+    colors[:mid]
+))
+
+bottom = list(zip(
+    labels[mid:],
+    percentages[mid:],
+    colors[mid:]
+))
 
 # =========================
 # 图形
 # =========================
 fig, (ax1, ax2) = plt.subplots(
-    1, 2,
-    figsize=(12, 6),
-    gridspec_kw={"width_ratios": [1.2, 1]}
+    1,
+    2,
+    figsize=(10, 6),
+    gridspec_kw={
+        "width_ratios": [1.45, 0.75]
+    }
 )
 
 # =========================
-# 🥧 饼图（纯颜色）
+# 饼图
 # =========================
 ax1.pie(
     values,
@@ -99,16 +124,16 @@ ax1.pie(
     startangle=140
 )
 
-ax1.set_title("Language Usage (HTML/CSS excluded)")
 ax1.axis("equal")
 
 # =========================
-# 📊 右侧（对齐版 legend）
+# 右侧 Legend
 # =========================
 ax2.axis("off")
 
+
 def draw_item(y, lang, pct, color):
-    # 色块
+    # 颜色块
     ax2.add_patch(
         plt.Rectangle(
             (0.05, y - 0.015),
@@ -121,8 +146,8 @@ def draw_item(y, lang, pct, color):
     )
 
     # 语言名称
-    txt = ax2.text(
-        0.1,
+    ax2.text(
+        0.10,
         y,
         lang,
         transform=ax2.transAxes,
@@ -131,46 +156,43 @@ def draw_item(y, lang, pct, color):
         ha="left"
     )
 
-    # 先渲染一次，获取文字实际宽度
-    fig.canvas.draw()
-
-    bbox = txt.get_window_extent(
-        renderer=fig.canvas.get_renderer()
-    )
-
-    # 转换为 Axes 坐标
-    x_end = ax2.transAxes.inverted().transform(
-        (bbox.x1, bbox.y0)
-    )[0]
-
-    # 百分比紧跟语言名称
+    # 百分比统一列对齐
     ax2.text(
-        x_end + 0.02,
+        0.72,
         y,
         f"{pct:.1f}%",
         transform=ax2.transAxes,
         fontsize=10,
         va="center",
-        ha="left"
+        ha="right"
     )
 
+
 # =========================
-# 上半部分（主语言）
+# 上半部分
 # =========================
-y = 0.9
+y = 0.90
+
 for lang, pct, color in top:
     draw_item(y, lang, pct, color)
     y -= 0.08
 
 # =========================
-# 下半部分（次语言）
+# 下半部分
 # =========================
 for lang, pct, color in bottom:
     draw_item(y, lang, pct, color)
     y -= 0.07
 
 # =========================
-# 保存
+# 保存 SVG
 # =========================
 plt.tight_layout()
-plt.savefig("language.svg", format="svg", bbox_inches="tight")
+
+plt.savefig(
+    "language.svg",
+    format="svg",
+    bbox_inches="tight"
+)
+
+print("language.svg generated")
