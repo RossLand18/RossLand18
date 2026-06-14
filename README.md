@@ -1,3 +1,3 @@
 ## project languages stats
 
-![language](https://raw.githubusercontent.com/RossLand18/RossLand18/main/language.svg)
+![language](https://cdn.jsdelivr.net/gh/RossLand18/RossLand18@main/language.svg)
