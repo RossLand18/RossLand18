@@ -120,25 +120,38 @@ def draw_item(y, lang, pct, color):
         )
     )
 
-    # 语言名（左对齐）
-    ax2.text(
+    # 语言名称
+    txt = ax2.text(
         0.1,
         y,
         lang,
         transform=ax2.transAxes,
         fontsize=10,
-        va="center"
+        va="center",
+        ha="left"
     )
 
-    # 百分比（右对齐）
+    # 先渲染一次，获取文字实际宽度
+    fig.canvas.draw()
+
+    bbox = txt.get_window_extent(
+        renderer=fig.canvas.get_renderer()
+    )
+
+    # 转换为 Axes 坐标
+    x_end = ax2.transAxes.inverted().transform(
+        (bbox.x1, bbox.y0)
+    )[0]
+
+    # 百分比紧跟语言名称
     ax2.text(
-        0.9,
+        x_end + 0.02,
         y,
         f"{pct:.1f}%",
         transform=ax2.transAxes,
         fontsize=10,
         va="center",
-        ha="right"
+        ha="left"
     )
 
 # =========================
